@@ -1,0 +1,42 @@
+Certainly! Here's an example of how you can use the `curl` command within a Groovy script to make an HTTP GET request to the SonarQube API for lines of code (LOC) metrics and handle the response without using the `http-builder` library. This script can be called within a Jenkins pipeline.
+
+```groovy
+def sonarQubeUrl = 'https://your-sonarqube-instance.com'
+def sonarQubeToken = 'your-sonarqube-token'
+def projectName = 'your-project-key'
+def metricKey = 'ncloc' // Metric key for lines of code
+
+def apiUrl = "${sonarQubeUrl}/api/measures/component?component=${projectName}&metricKeys=${metricKey}"
+def curlCommand = "curl -s -H 'Authorization: Bearer ${sonarQubeToken}' '${apiUrl}'"
+
+def process = curlCommand.execute()
+def response = process.text
+
+if (process.exitValue() == 0) {
+    def jsonSlurper = new groovy.json.JsonSlurper()
+    def jsonResponse = jsonSlurper.parseText(response)
+
+    def measures = jsonResponse.component.measures
+    def linesOfCodeMetric = measures.find { it.metric == metricKey }
+
+    if (linesOfCodeMetric) {
+        def linesOfCode = linesOfCodeMetric.value
+        println "Lines of Code: ${linesOfCode}"
+
+        // Trigger email notification if LOC exceeds a threshold
+        if (linesOfCode > 10000) {
+            echo "High Lines of Code Alert: The project has exceeded the lines of code threshold."
+        }
+    } else {
+        println "Lines of Code metric not found for the project."
+    }
+} else {
+    println "Error: Unable to retrieve Lines of Code metric."
+}
+```
+
+Replace `'https://your-sonarqube-instance.com'` with your SonarQube server URL, `'your-sonarqube-token'` with your SonarQube token, and adjust `'your-project-key'` to match the specific project key for which you want to retrieve lines of code metrics.
+
+In this script, the `curl` command is executed to make the HTTP GET request to the SonarQube API. The response is then processed using a `JsonSlurper` to parse the JSON data. The script handles the response and performs the necessary actions based on the retrieved lines of code metric.
+
+Make sure you have the `curl` command available on your Jenkins machine, and ensure your SonarQube instance's API is accessible and your token has the required permissions to retrieve project metrics. Adjust the thresholds and notifications according to your requirements.
