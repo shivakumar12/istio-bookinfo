@@ -1,0 +1,74 @@
+Certainly, here's an example of how you can define a Groovy function that takes parameters to invoke the SonarQube API for lines of code coverage metrics. You can then call this function within a declarative Jenkins pipeline stage:
+
+```groovy
+def getLinesOfCodeMetrics(String sonarQubeUrl, String sonarQubeToken, String projectName) {
+    def metricKey = 'ncloc' // Metric key for lines of code
+
+    def response = new URL("${sonarQubeUrl}/api/measures/component?" +
+                          "componentKey=${projectName}&metricKeys=${metricKey}")
+                          .openConnection()
+                          .with {
+                              setRequestProperty("Authorization", "Bearer ${sonarQubeToken}")
+                              connect()
+                              content.text
+                          }
+
+    def jsonResponse = new groovy.json.JsonSlurperClassic().parseText(response)
+
+    if (jsonResponse.component.measures) {
+        def linesOfCodeMetric = jsonResponse.component.measures.find { it.metric == metricKey }
+        
+        if (linesOfCodeMetric) {
+            def linesOfCode = linesOfCodeMetric.value
+            return linesOfCode
+        } else {
+            return "Lines of Code metric not found for the project."
+        }
+    } else {
+        return "Error: Unable to fetch metrics from SonarQube."
+    }
+}
+
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout your code repository here
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                // Build your code here
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                // Run your tests here
+            }
+        }
+        
+        stage('Retrieve LOC Metrics') {
+            steps {
+                script {
+                    def sonarQubeUrl = 'https://your-sonarqube-instance.com'
+                    def sonarQubeToken = 'your-sonarqube-token'
+                    def projectName = 'your-project-key'
+
+                    def linesOfCode = getLinesOfCodeMetrics(sonarQubeUrl, sonarQubeToken, projectName)
+                    echo "Lines of Code: ${linesOfCode}"
+                }
+            }
+        }
+    }
+}
+```
+
+In this example, the `getLinesOfCodeMetrics` function takes the SonarQube URL, token, and project name as parameters and returns the lines of code metrics. The script uses Groovy's built-in capabilities to make the API request without requiring the `http-builder` library.
+
+Replace `'https://your-sonarqube-instance.com'` with your SonarQube server URL, `'your-sonarqube-token'` with your SonarQube token, and adjust `'your-project-key'` to match the specific project key for which you want to retrieve lines of code metrics.
+
+Remember that this script uses native Java URL connections to make the API request. The JSON response is parsed using Groovy's `JsonSlurperClassic`. Make sure to adjust the error handling and response parsing as needed for your use case.
