@@ -1,0 +1,21 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Retrieve Lines of Code') {
+            steps {
+                script {
+                    def sonarUrl = 'https://your-sonarqube-server'
+                    def componentKey = 'your_project_key'
+                    def metricKey = 'ncloc'
+
+                    def apiUrl = "${sonarUrl}/api/measures/component?component=${componentKey}&metricKeys=${metricKey}"
+                    def response = sh(script: "curl -s ${apiUrl}", returnStdout: true)
+                    def metricValue = readJSON(text: response).component.measures[0].value
+
+                    echo "Lines of Code: ${metricValue}"
+                }
+            }
+        }
+    }
+}
