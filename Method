@@ -1,0 +1,46 @@
+def getSonarQubeMetrics(String baseUrl, String projectKey, String authToken) {
+    def apiUrl = "${baseUrl}/api/measures/component"
+    def queryParams = [
+        component: projectKey,
+        metricKeys: 'ncloc'
+    ]
+    
+    def response = httpRequest(
+        url: apiUrl,
+        authentication: authToken,
+        contentType: 'APPLICATION_JSON',
+        ignoreSslErrors: true,
+        customHeaders: [[name: 'Accept', value: 'APPLICATION_JSON']],
+        httpMode: 'GET',
+        requestBody: queryParams
+    )
+    
+    if (response.status == 200) {
+        def jsonResponse = readJSON text: response.content
+        def ncloc = jsonResponse.component.measures[0].value
+        return ncloc
+    } else {
+        throw new Exception("Failed to fetch SonarQube metrics. Status code: ${response.status}")
+    }
+}
+
+pipeline {
+    agent any
+    
+    environment {
+        SONARQUBE_BASE_URL = 'https://your-sonarqube-url'
+        PROJECT_KEY = 'your-project-key'
+        AUTH_TOKEN = credentials('sonarqube-auth-token')
+    }
+    
+    stages {
+        stage('Fetch Metrics') {
+            steps {
+                script {
+                    def linesOfCode = getSonarQubeMetrics(SONARQUBE_BASE_URL, PROJECT_KEY, AUTH_TOKEN)
+                    echo "Lines of Code: ${linesOfCode}"
+                }
+            }
+        }
+    }
+}
