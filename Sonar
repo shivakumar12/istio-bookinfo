@@ -1,0 +1,93 @@
+To implement SonarQube API calls to retrieve lines of code metrics and trigger email notifications from a declarative Jenkins pipeline using a Groovy function, you can follow these steps:
+
+1. **Install Required Plugins:**
+   Make sure you have the necessary plugins installed in your Jenkins instance to support SonarQube integration and email notifications.
+
+2. **Configure Declarative Pipeline:**
+   In your Jenkinsfile, define the declarative pipeline stages and steps for your build process. You'll need stages for checking out code, building, running tests, and interacting with SonarQube.
+
+3. **Define Groovy Function:**
+   Define a Groovy function within the pipeline script that will make the SonarQube API call and retrieve the lines of code metric. Also, define a function to trigger email notifications. Here's an example:
+
+```groovy
+def getLinesOfCodeMetrics() {
+    def sonarQubeUrl = 'https://your-sonarqube-instance.com'
+    def sonarQubeToken = 'your-sonarqube-token'
+    def projectName = 'your-project-key'
+    def metricKey = 'ncloc' // Metric key for lines of code
+
+    def client = new RESTClient(sonarQubeUrl)
+
+    def response = client.get(
+        path: "/api/measures/component",
+        query: [componentKey: projectName, metricKeys: metricKey],
+        headers: ['Authorization': "Bearer ${sonarQubeToken}"]
+    )
+
+    if (response.status == 200) {
+        def measures = response.data.component.measures
+        def linesOfCodeMetric = measures.find { it.metric == metricKey }
+        
+        if (linesOfCodeMetric) {
+            return linesOfCodeMetric.value
+        } else {
+            return null
+        }
+    } else {
+        return null
+    }
+}
+
+def sendEmailNotification(String message) {
+    // Implement your email notification logic here
+    // You can use Jenkins built-in email notifications or plugins
+    // Example: emailext subject: 'Code Metrics Report', body: message, to: 'recipient@example.com'
+}
+```
+
+4. **Pipeline Stages:**
+   Incorporate the defined functions into your pipeline stages as needed. For example:
+
+```groovy
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout your code repository here
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                // Build your code here
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                // Run your tests here
+            }
+        }
+        
+        stage('Get Code Metrics') {
+            steps {
+                script {
+                    def linesOfCode = getLinesOfCodeMetrics()
+                    if (linesOfCode) {
+                        sendEmailNotification("Lines of Code: ${linesOfCode}")
+                    } else {
+                        sendEmailNotification("Failed to retrieve lines of code metrics.")
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+5. **Email Notification Configuration:**
+   Configure the email notification logic within the `sendEmailNotification` function. You can use the built-in email notifications of Jenkins or use plugins like the Email Extension Plugin to send more advanced email notifications.
+
+Remember to replace placeholders like `'https://your-sonarqube-instance.com'`, `'your-sonarqube-token'`, and `'your-project-key'` with actual values. Also, adjust the email notification logic to match your organization's email configuration and preferences.
