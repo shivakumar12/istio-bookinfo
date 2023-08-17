@@ -1,0 +1,89 @@
+Certainly! Here's an example of how you can define a Groovy function to invoke the SonarQube API for lines of code (LOC) coverage metrics and then call that function within a declarative Jenkins pipeline using parameters:
+
+1. **Define the Groovy Function (metrics.groovy):**
+
+Create a Groovy script named `metrics.groovy` that contains the function to retrieve LOC metrics from the SonarQube API:
+
+```groovy
+// metrics.groovy
+def getLOCMetrics(String sonarQubeUrl, String sonarQubeToken, String projectName) {
+    def metricKey = 'ncloc' // Metric key for lines of code
+
+    def client = new groovyx.net.http.RESTClient(sonarQubeUrl)
+
+    def response = client.get(
+        path: "/api/measures/component",
+        query: [componentKey: projectName, metricKeys: metricKey],
+        headers: ['Authorization': "Bearer ${sonarQubeToken}"]
+    )
+
+    if (response.status == 200) {
+        def measures = response.data.component.measures
+        def linesOfCodeMetric = measures.find { it.metric == metricKey }
+
+        if (linesOfCodeMetric) {
+            return linesOfCodeMetric.value
+        } else {
+            return null
+        }
+    } else {
+        return null
+    }
+}
+```
+
+2. **Declarative Pipeline Using the Function:**
+
+In your Jenkinsfile (declarative pipeline), you can call the Groovy function defined in the previous step by loading and executing the `metrics.groovy` script. You can also pass parameters to the function using the `script` block.
+
+```groovy
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout your code repository here
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                // Build your code here
+            }
+        }
+        
+        stage('Run Tests') {
+            steps {
+                // Run your tests here
+            }
+        }
+        
+        stage('Retrieve LOC Metrics') {
+            steps {
+                script {
+                    def sonarQubeUrl = 'https://your-sonarqube-instance.com'
+                    def sonarQubeToken = 'your-sonarqube-token'
+                    def projectName = 'your-project-key'
+
+                    // Load the metrics.groovy script
+                    def metricsScript = load 'metrics.groovy'
+                    
+                    // Call the function to get LOC metrics
+                    def linesOfCode = metricsScript.getLOCMetrics(sonarQubeUrl, sonarQubeToken, projectName)
+                    
+                    if (linesOfCode != null) {
+                        echo "Lines of Code: ${linesOfCode}"
+                    } else {
+                        echo "Failed to retrieve Lines of Code metric."
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+Replace the placeholders `'https://your-sonarqube-instance.com'`, `'your-sonarqube-token'`, and `'your-project-key'` with the actual values.
+
+This example demonstrates how to define a Groovy function in an external script and call it within a declarative Jenkins pipeline, passing parameters to retrieve LOC metrics from the SonarQube API.
