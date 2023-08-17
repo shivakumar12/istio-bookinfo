@@ -1,0 +1,39 @@
+Certainly, here's an example of how you can use the SonarQube API to retrieve lines of code (LOC) metrics using a Groovy script:
+
+```groovy
+@Grab(group='org.codehaus.groovy.modules.http-builder', module='http-builder', version='0.7.1')
+import groovyx.net.http.RESTClient
+
+def sonarQubeUrl = 'https://your-sonarqube-instance.com'
+def sonarQubeToken = 'your-sonarqube-token'
+def projectName = 'your-project-key'
+def metricKey = 'ncloc' // Metric key for lines of code
+
+def client = new RESTClient(sonarQubeUrl)
+
+def response = client.get(
+    path: "/api/measures/component",
+    query: [componentKey: projectName, metricKeys: metricKey],
+    headers: ['Authorization': "Bearer ${sonarQubeToken}"]
+)
+
+if (response.status == 200) {
+    def measures = response.data.component.measures
+    def linesOfCodeMetric = measures.find { it.metric == metricKey }
+    
+    if (linesOfCodeMetric) {
+        def linesOfCode = linesOfCodeMetric.value
+        println "Lines of Code: ${linesOfCode}"
+    } else {
+        println "Lines of Code metric not found for the project."
+    }
+} else {
+    println "Error: ${response.status} - ${response.statusText}"
+}
+```
+
+Replace `'https://your-sonarqube-instance.com'` with your SonarQube server URL and `'your-sonarqube-token'` with your SonarQube token. Adjust `'your-project-key'` to match the specific project key for which you want to retrieve lines of code metrics.
+
+The script uses the `/api/measures/component` endpoint of the SonarQube API to fetch measures for the specified component (project). The response is then parsed to extract the lines of code metric value using the metric key `'ncloc'`.
+
+Ensure you have the necessary dependencies installed or included for HTTP requests, like the `http-builder` library. Also, verify that your SonarQube instance's API is accessible and your token has the required permissions to retrieve project metrics.
