@@ -1,0 +1,62 @@
+To implement SonarQube API integration for retrieving lines of code metrics and triggering email notifications from a declarative Jenkins pipeline, you can follow these steps:
+
+1. **Install Required Plugins:**
+   Ensure you have the necessary plugins installed in your Jenkins instance to support HTTP requests, such as the `HTTP Request Plugin`.
+
+2. **Configure Declarative Pipeline:**
+   In your Jenkinsfile, define the declarative pipeline stages and steps for your build process. You'll need stages for code analysis and sending email notifications.
+
+3. **SonarQube API Integration:**
+   Add a stage to your pipeline for fetching lines of code metrics from SonarQube using the API. Replace `'your-sonarqube-url'` and `'your-sonarqube-token'` with appropriate values.
+
+```groovy
+pipeline {
+    agent any
+    
+    stages {
+        stage('Code Analysis') {
+            steps {
+                script {
+                    def sonarQubeUrl = 'https://your-sonarqube-url'
+                    def sonarQubeToken = 'your-sonarqube-token'
+                    def projectName = 'your-project-key'
+                    def metricKey = 'ncloc' // Metric key for lines of code
+                    
+                    def client = new RESTClient(sonarQubeUrl)
+                    
+                    def response = client.get(
+                        path: "/api/measures/component",
+                        query: [component: projectName, metricKeys: metricKey],
+                        headers: ['Authorization': "Bearer ${sonarQubeToken}"]
+                    )
+                    
+                    if (response.status == 200) {
+                        def linesOfCode = response.data.component.measures[0].value
+                        echo "Lines of Code: ${linesOfCode}"
+                    } else {
+                        echo "Error: ${response.status} - ${response.statusText}"
+                    }
+                }
+            }
+        }
+        
+        stage('Send Email Notification') {
+            steps {
+                emailext (
+                    subject: "Code Analysis Report",
+                    body: "Lines of Code: ${linesOfCode}",
+                    to: 'recipient@example.com',
+                    from: 'jenkins@example.com'
+                )
+            }
+        }
+    }
+}
+```
+
+4. **Triggering the Pipeline:**
+   Commit your Jenkinsfile to your version control repository and trigger a pipeline build in Jenkins.
+
+This pipeline will fetch the lines of code metrics from SonarQube using the API and then send an email notification with the lines of code information. Please adjust the values (`'your-sonarqube-url'`, `'your-sonarqube-token'`, `'your-project-key'`, email addresses, etc.) to match your environment.
+
+Note: This example is for illustrative purposes. Make sure to have the necessary plugins installed, permissions set, and the correct API endpoint structure for your specific SonarQube instance. Additionally, the API response handling may vary based on the SonarQube API version and structure.
