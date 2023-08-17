@@ -1,0 +1,43 @@
+Certainly! You can use the `groovy.json.JsonSlurper` to parse the JSON responses from SonarQube's GET APIs and the built-in `url` object to perform HTTP requests without explicitly creating connection objects or using external HTTP clients like HttpBuilder. Here's an example of how you might achieve this in a Jenkins shared library:
+
+1. Create a Groovy file in your shared library, e.g., `SonarQubeUtils.groovy`:
+
+```groovy
+import groovy.json.JsonSlurper
+
+class SonarQubeUtils {
+    static def getLinesOfCodeMetrics(String apiUrl, String authToken) {
+        def apiUrlWithMetrics = "$apiUrl/api/measures/component?metricKeys=ncloc"
+        
+        def response = apiUrlWithMetrics.toURL().getText(requestHeaders: ['Authorization': "Bearer $authToken"])
+        def jsonResponse = new JsonSlurper().parseText(response)
+        
+        def nclocMetric = jsonResponse.component.measures.find { it.metric == 'ncloc' }
+        return nclocMetric ? nclocMetric.value.toInteger() : null
+    }
+}
+```
+
+2. In your Jenkins pipeline script that uses the shared library, you can call the `getLinesOfCodeMetrics` function like this:
+
+```groovy
+@Library('your-shared-library') _
+import SonarQubeUtils
+
+node {
+    def sonarApiUrl = 'https://your-sonarqube-server'
+    def sonarAuthToken = 'your-auth-token'
+
+    def linesOfCode = SonarQubeUtils.getLinesOfCodeMetrics(sonarApiUrl, sonarAuthToken)
+    
+    if (linesOfCode != null) {
+        echo "Lines of code: $linesOfCode"
+    } else {
+        echo "Failed to retrieve lines of code metrics"
+    }
+}
+```
+
+In this example, we're utilizing Groovy's built-in `toURL()` method to create a URL object and perform a GET request using the `getText` method. The `Authorization` header is added to the request using the `requestHeaders` parameter. The JSON response is then parsed using `JsonSlurper`.
+
+Please note that handling errors, timeouts, and other edge cases might require additional code. Also, make sure to replace `'https://your-sonarqube-server'` and `'your-auth-token'` with your actual SonarQube server URL and authentication token.
