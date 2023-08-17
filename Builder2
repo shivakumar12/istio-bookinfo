@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Invoke SonarQube API') {
+            steps {
+                script {
+                    def sonarBaseUrl = 'https://your-sonarqube-server'
+                    def projectKey = 'your-project-key'
+                    def metricKey = 'ncloc'
+
+                    def apiUrl = "${sonarBaseUrl}/api/measures/component?component=${projectKey}&metricKeys=${metricKey}"
+                    
+                    def response = new URL(apiUrl).text
+                    def json = new groovy.json.JsonSlurperClassic().parseText(response)
+
+                    def linesOfCode = json.component.measures[0].value
+
+                    echo "Lines of Code: ${linesOfCode}"
+                    
+                    callAnotherFunction(linesOfCode)
+                }
+            }
+        }
+    }
+}
+
+def callAnotherFunction(linesOfCode) {
+    // Your logic to call another function using the linesOfCode value
+}
