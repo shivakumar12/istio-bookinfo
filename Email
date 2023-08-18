@@ -1,0 +1,53 @@
+import groovy.json.JsonSlurper
+
+def sonarMetricsUrl = 'https://sonarqube.example.com/api/measures/component?component=<component_key>&metricKeys=<metric_keys>'
+def sonarAuthToken = 'your_sonar_auth_token'
+def recipientEmail = 'recipient@example.com'
+def subject = 'SonarQube Metrics Report'
+
+// Fetch SonarQube metrics data using API
+def sonarMetricsData = getSonarMetricsData(sonarMetricsUrl, sonarAuthToken)
+
+// Build HTML body using the metrics data
+def htmlBody = buildHtmlBody(sonarMetricsData)
+
+// Send the email using emailext plugin
+emailext (
+    to: recipientEmail,
+    subject: subject,
+    mimeType: 'text/html',
+    body: htmlBody
+)
+
+def getSonarMetricsData(url, authToken) {
+    def response = new URL(url).openConnection()
+    response.setRequestProperty('Authorization', "Bearer $authToken")
+    return new JsonSlurper().parse(response.inputStream)
+}
+
+def buildHtmlBody(metricsData) {
+    def html = '''
+        <html>
+        <body>
+            <h2>SonarQube Metrics Report</h2>
+            <table border="1">
+                <tr>
+                    <th>Metric Name</th>
+                    <th>Value</th>
+                </tr>
+        '''
+    metricsData.component.measures.each { measure ->
+        html += '''
+                <tr>
+                    <td>${measure.metric}</td>
+                    <td>${measure.value}</td>
+                </tr>
+        '''
+    }
+    html += '''
+            </table>
+        </body>
+        </html>
+    '''
+    return html
+}
