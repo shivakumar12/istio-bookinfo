@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Retrieve Metrics and Send Email') {
+            steps {
+                script {
+                    def sonarUrl = 'https://your-sonarqube-server'
+                    def componentKey = 'your_project_key'
+                    def metricKey = 'ncloc'
+
+                    def apiUrl = "${sonarUrl}/api/measures/component?component=${componentKey}&metricKeys=${metricKey}"
+                    def response = sh(script: "curl -s ${apiUrl}", returnStdout: true)
+                    def metricValue = readJSON(text: response).component.measures[0].value
+
+                    def emailBody = """
+                    <html>
+                    <body>
+                        <h2>SonarQube Metrics Report</h2>
+                        <p>Lines of Code: ${metricValue}</p>
+                    </body>
+                    </html>
+                    """
+
+                    emailext(
+                        subject: 'SonarQube Metrics Report',
+                        body: emailBody,
+                        to: 'recipient@example.com', // Replace with recipient's email address
+                        from: 'jenkins@example.com', // Replace with sender's email address
+                        mimeType: 'text/html'
+                    )
+                }
+            }
+        }
+    }
+}
