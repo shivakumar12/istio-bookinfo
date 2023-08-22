@@ -1,0 +1,53 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Retrieve Metrics and Notify') {
+            steps {
+                script {
+                    def componentKey = 'your_project_key'
+                    def metricKey = 'ncloc'
+                    def metricValue = getSonarQubeMetrics(componentKey, metricKey)
+
+                    def emailSubject = "SonarQube Metrics Notification"
+                    def emailBody = generateHtmlEmail(metricValue)
+                    
+                    emailext (
+                        subject: emailSubject,
+                        body: emailBody,
+                        to: 'recipient@example.com',
+                        recipientProviders: [[$class: 'DevelopersRecipientProvider']],
+                        mimeType: 'text/html',
+                        attachLog: true
+                    )
+                }
+            }
+        }
+    }
+}
+
+def getSonarQubeMetrics(componentKey, metricKey) {
+    // Your logic to retrieve SonarQube metrics
+    // For example, using RESTClient or other API calls
+    return 1234 // Replace with actual metric value
+}
+
+def generateHtmlEmail(metricValue) {
+    return """
+        <html>
+        <body>
+            <h2>SonarQube Metrics Report</h2>
+            <table border="1">
+                <tr>
+                    <th>Metric</th>
+                    <th>Value</th>
+                </tr>
+                <tr>
+                    <td>Lines of Code (ncloc)</td>
+                    <td>${metricValue}</td>
+                </tr>
+            </table>
+        </body>
+        </html>
+    """
+}
