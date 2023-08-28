@@ -16,4 +16,4 @@ NOTE: Similarly, You can control which version of Kubernetes you want to play ar
 KIND Documenation - https://kind.sigs.k8s.io/docs/user/quick-start/
 
 
-For detailed instructions, please refer to our wiki : https://github.tools.sap/k8s-playground/k8s-kind-cluster/wiki
+
