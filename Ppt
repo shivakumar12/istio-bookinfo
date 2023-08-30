@@ -12,3 +12,22 @@
 🔹 Empowered Insights: Gain real-time visibility into deployments, enhancing decision-making and problem-solving.
 
 Armed with the App-of-Apps pattern, you're poised for DevOps success and industry-leading efficiency. Embrace the future of application management today!"
+                 +---------------------+
+                 |    App-of-Apps      |
+                 |   Configuration     |
+                 |       Repo          |
+                 +-----------+---------+
+                             |
+                +------------v-----------+
+                |                        |
+                |                        |
+         +------+------+         +--------+------+
+         |  App 1      |         |  App 2      |
+         | Deployment  |         | Deployment  |
+         +------+------+         +--------+------+
+                |                        |
+                |                        |
+         +------+------+         +--------+------+
+         |  App 3      |         |  App 4      |
+         | Deployment  |         | Deployment  |
+         +------+------+         +--------+------+
