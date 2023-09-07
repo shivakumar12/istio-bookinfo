@@ -1,0 +1,20 @@
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout the source code from your version control system
+                // Example: Git checkout
+                script {
+                    // Use the 'checkout' step for Git
+                    checkout([$class: 'GitSCM', branches: [[name: 'master']], userRemoteConfigs: [[url: 'https://github.com/your/repo.git']]])
+                }
+            }
+        }
+        
+        // Add more stages for building, testing, and deployment here
+    }
+    
+    // Post-build actions and notifications can be defined here
+}
