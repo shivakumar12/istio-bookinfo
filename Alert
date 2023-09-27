@@ -1,0 +1,6 @@
+index=your_index sourcetype=your_sourcetype
+| eval current_time = now()
+| eval token_expiration_time = _time + expiration_duration  // Calculate the token expiration time
+| search current_time > token_expiration_time  // Check if the token is expired
+| table _time, token_id, user_id  // Select relevant fields for the alert
+| rename _time AS "Token Expiration Time", token_id AS "Token ID", user_id AS "User ID"
