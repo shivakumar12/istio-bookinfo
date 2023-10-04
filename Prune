@@ -1,0 +1,40 @@
+Pruning unused containers in a pipeline or automation environment is a common practice to keep your Docker host clean. Here are some best practices and a way to prune unused containers in a pipeline:
+
+1. **Use a Dedicated User**: Ensure that the user running the pipeline has the necessary permissions to manage Docker containers and prune operations.
+
+2. **Automate Pruning**: Incorporate container pruning as a step in your pipeline. You can use a scripting language like Bash or a tool like Jenkins, GitLab CI/CD, or Travis CI to automate this process.
+
+3. **Scheduled Pruning**: Instead of running pruning every time, consider scheduling it at regular intervals using a tool like Cron. This helps keep the Docker host clean without manual intervention.
+
+4. **Dry Run First**: Before performing actual pruning in your pipeline, you can use Docker's `docker container prune -f --dry-run` and `docker image prune -f --dry-run` commands to see what would be removed without actually removing anything. This can help you understand the potential impact.
+
+5. **Logging**: Implement proper logging in your pipeline script to capture the results of pruning operations. This can be useful for debugging and monitoring purposes.
+
+Here's an example of a simple script that you can use in a pipeline to prune unused containers:
+
+```bash
+#!/bin/bash
+
+# Exit on any error
+set -e
+
+# Log file
+LOG_FILE="container_prune.log"
+
+# Prune containers and images
+echo "Pruning unused containers and images..." | tee -a $LOG_FILE
+docker container prune -f --filter "until=24h" | tee -a $LOG_FILE
+docker image prune -f | tee -a $LOG_FILE
+
+echo "Pruning complete." | tee -a $LOG_FILE
+```
+
+In this script, we:
+
+- Use `set -e` to exit the script on any error.
+- Define a log file (`LOG_FILE`) to capture the output.
+- Use `tee` to log the output of Docker commands to the log file.
+- Prune containers with the `docker container prune` command, filtering for containers that have been stopped for at least 24 hours.
+- Prune unused images with the `docker image prune` command.
+
+This script is a starting point, and you can customize it to fit your specific needs, such as adjusting the filter criteria or adding additional steps before or after pruning. Incorporate this script as part of your pipeline automation for regular container maintenance.
