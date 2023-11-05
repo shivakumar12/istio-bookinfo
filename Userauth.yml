@@ -1,0 +1,44 @@
+To create an Ansible playbook for RabbitMQ (RMQ) user authorization and setting permissions for multiple users and instances with different RMQ CLI paths while dynamically changing `rmq_instances`, you can use Ansible's dynamic inventory or pass the `rmq_instances` as an extra variable when running the playbook. Here's an example playbook that demonstrates this approach:
+
+```yaml
+---
+- name: RabbitMQ User Authorization Playbook
+  hosts: localhost
+  gather_facts: no
+  vars:
+    rmq_instances: "{{ rmq_instances | default([]) }}"
+  tasks:
+    - name: Authorize users for RMQ instances
+      block:
+        - name: Authorize users for each RMQ instance
+          include_tasks: tasks/rabbitmq_user_auth.yml
+          loop: "{{ item.users }}"
+          loop_control:
+            loop_var: user
+          vars:
+            cli_path: "{{ item.cli_path }}"
+      loop: "{{ rmq_instances }}"
+```
+
+In this playbook:
+
+- We set `rmq_instances` as a variable, allowing you to pass it dynamically when running the playbook.
+
+Now, let's create the `tasks/rabbitmq_user_auth.yml` file as described in the previous response:
+
+```yaml
+---
+- name: Create RMQ User and Set Permissions
+  shell: |
+    {{ cli_path }} add_user {{ user.username }} {{ user.password }}
+    {{ cli_path }} set_permissions -p {{ user.vhost }} {{ user.username }} ".*" ".*" ".*"
+  delegate_to: localhost
+```
+
+When running the playbook, you can dynamically change the `rmq_instances` by specifying it as an extra variable. Here's an example command:
+
+```bash
+ansible-playbook -e "rmq_instances=[{'name': 'instance1', 'cli_path': '/path/to/rmq_instance1/rabbitmqctl', 'users': [{'username': 'user1', 'password': 'password1', 'vhost': '/'}, {'username': 'user2', 'password': 'password2', 'vhost': '/myvhost'}]}, {'name': 'instance2', 'cli_path': '/path/to/rmq_instance2/rabbitmqctl', 'users': [{'username': 'user3', 'password': 'password3', 'vhost': '/'}, {'username': 'user4', 'password': 'password4', 'vhost': '/myvhost'}]}]" your_playbook.yml
+```
+
+Replace the example values with your actual RMQ instances and user details. This approach allows you to dynamically change the `rmq_instances` without modifying the playbook itself.
